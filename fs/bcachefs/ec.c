@@ -1,5 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0
 
+#ifdef CONFIG_BCACHEFS_ASYNC
+#include "ec_offload.h"
+#endif
+
 /* erasure coding */
 
 #include "bcachefs.h"
@@ -35,6 +39,22 @@
 
 #include <linux/raid/pq.h>
 #include <linux/raid/xor.h>
+
+#ifdef CONFIG_BCACHEFS_ASYNC
+static void bch2_ec_offload_done(void *ctx, int status, struct ec_req *req)
+{
+    struct bch_ec_job *job = ctx;   /* whatever struct you use for EC jobs */
+
+    if (status) {
+        pr_err("bcachefs: async EC failed with %d\n", status);
+        job->error = status;
+    }
+
+    /* Signal completion (could be a completion, refcount, or wakeup) */
+    complete(&job->completion);
+}
+#endif
+
 
 static void raid5_recov(unsigned disks, unsigned failed_idx,
 			size_t size, void **data)
@@ -640,11 +660,23 @@ static void ec_validate_checksums(struct bch_fs *c, struct ec_stripe_buf *buf)
 
 static void ec_generate_ec(struct ec_stripe_buf *buf)
 {
+#ifdef CONFIG_BCACHEFS_EC_OFFLOAD
+    	struct ec_request req = {
+        	.data = buf->data_blocks,
+        	.parity = buf->parity_blocks,
+        	.nr_data = buf->nr_data,
+        	.nr_parity = buf->nr_parity,
+        	.private = buf,
+    	};
+
+    	ec_submit_request(&req);
+#else
 	struct bch_stripe *v = &bkey_i_to_stripe(&buf->key)->v;
 	unsigned nr_data = v->nr_blocks - v->nr_redundant;
 	unsigned bytes = le16_to_cpu(v->sectors) << 9;
 
 	raid_gen(nr_data, v->nr_redundant, bytes, buf->data);
+#endif
 }
 
 static unsigned ec_nr_failed(struct ec_stripe_buf *buf)

@@ -191,6 +191,10 @@
 #define dynamic_fault(...)		0
 #endif
 
+#ifdef CONFIG_BCACHEFS_ASYNC
+    struct ec_dev *ec_dev;
+#endif
+
 #define race_fault(...)			dynamic_fault("bcachefs:race")
 
 #include <linux/backing-dev-defs.h>

@@ -623,6 +623,10 @@ int bch2_fs_read_write_early(struct bch_fs *c)
 
 static void __bch2_fs_free(struct bch_fs *c)
 {
+#ifdef CONFIG_BCACHEFS_ASYNC
+    	if (c->ec_dev)
+        	ec_offload_unregister(c->ec_dev);
+#endif
 	for (unsigned i = 0; i < BCH_TIME_STAT_NR; i++)
 		bch2_time_stats_exit(&c->times[i]);
 
@@ -2611,6 +2615,13 @@ static inline int sb_cmp(struct bch_sb *l, struct bch_sb *r)
 struct bch_fs *bch2_fs_open(darray_const_str *devices,
 			    struct bch_opts *opts)
 {
+#ifdef CONFIG_BCACHEFS_EC_OFFLOAD
+    	ret = ec_offload_init(c);
+    	if (ret) {
+        	bch_err(c, "failed to init EC offload");
+        	goto err;
+    	}
+#endif
 	bch_sb_handles sbs = {};
 	struct bch_fs *c = NULL;
 	struct bch_sb_handle *best = NULL;

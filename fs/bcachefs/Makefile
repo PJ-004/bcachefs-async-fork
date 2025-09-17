@@ -1,4 +1,4 @@
-
+obj-$(CONFIG_BCACHEFS_EC_OFFLOAD) += ec_offload.o
 obj-$(CONFIG_BCACHEFS_FS)	+= bcachefs.o
 
 bcachefs-y		:=	\

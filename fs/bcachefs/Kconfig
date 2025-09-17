@@ -56,6 +56,11 @@ config BCACHEFS_ERASURE_CODING
 	WARNING: this feature is still undergoing on disk format changes, and
 	should only be enabled for testing purposes.
 
+config BCACHEFS_EC_OFFLOAD
+    	bool "Enable EC offload support"
+    	depends on BCACHEFS_FS
+    	default n
+
 config BCACHEFS_POSIX_ACL
 	bool "bcachefs POSIX ACL support"
 	depends on BCACHEFS_FS
