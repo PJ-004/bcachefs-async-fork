@@ -1,0 +1,5 @@
+config EC_OFFLOAD
+    tristate "Mock Erasure Coding offload device"
+    help
+      Provides a mock erasure coding accelerator driver
+      for testing async EC paths in filesystems.
